@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ override: true });
+
+console.log('NODE_ENV REAL =>', process.env.NODE_ENV);
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -13,20 +15,20 @@ import mocksRouter from './routes/mocks.router.js';
 
 import { errorHandler } from './errors/errorHandler.js';
 import { addLogger } from './middlewares/logger.middleware.js';
-import { logger } from './logger/logger.js';
+import logger from './logger/logger.js';
 import loggerTestRouter from './routes/loggerTest.router.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-/*  MIDDLEWARES BASE  */
+/* MIDDLEWARES BASE */
 app.use(express.json());
 app.use(cookieParser());
 
-/*  LOGGER MIDDLEWARE  */
+/* LOGGER */
 app.use(addLogger);
 
-/*  RUTAS  */
+/* RUTAS */
 app.use('/api/users', usersRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/adoptions', adoptionsRouter);
@@ -34,15 +36,16 @@ app.use('/api/sessions', sessionsRouter);
 app.use('/api/mocks', mocksRouter);
 app.use('/', loggerTestRouter);
 
-/*  ERROR HANDLER  */
+/* ERROR HANDLER */
 app.use(errorHandler);
 
-/*  CONEXIÓN DB  */
+/* DB */
+mongoose.set('strictQuery', false);
 mongoose.connect(process.env.MONGO_URL)
   .then(() => logger.info('MongoDB conectado'))
-  .catch(err => logger.error('Error MongoDB', err));
+  .catch(err => logger.error(`Error MongoDB: ${err.message}`));
 
-/*  SERVER  */
+/* SERVER */
 app.listen(PORT, () => {
   logger.info(`Listening on ${PORT}`);
 });

@@ -2,26 +2,27 @@ import winston from 'winston';
 
 const customLevels = {
   levels: {
-    fatal: 0,
-    error: 1,
-    warning: 2,
-    info: 3,
-    http: 4,
-    debug: 5
+    debug: 0,
+    http: 1,
+    info: 2,
+    warning: 3,
+    error: 4,
+    fatal: 5
   },
   colors: {
-    fatal: 'red',
-    error: 'yellow',
-    warning: 'blue',
-    info: 'green',
+    debug: 'blue',
     http: 'magenta',
-    debug: 'white'
+    info: 'green',
+    warning: 'yellow',
+    error: 'red',
+    fatal: 'bold red'
   }
 };
 
 winston.addColors(customLevels.colors);
 
-const logFormat = winston.format.combine(
+/* FORMATOS */
+const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ level, message, timestamp }) => {
@@ -29,33 +30,40 @@ const logFormat = winston.format.combine(
   })
 );
 
+const fileFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.printf(({ level, message, timestamp }) => {
+    return `[${timestamp}] ${level}: ${message}`;
+  })
+);
+
+/* LOGGER DEV */
 const devLogger = winston.createLogger({
   levels: customLevels.levels,
-  format: logFormat,
   transports: [
     new winston.transports.Console({
-      level: 'debug'
+      level: 'debug',
+      format: consoleFormat
     })
   ]
 });
 
+/* LOGGER PROD */
 const prodLogger = winston.createLogger({
   levels: customLevels.levels,
   transports: [
     new winston.transports.Console({
       level: 'info',
-      format: logFormat
+      format: consoleFormat
     }),
     new winston.transports.File({
       filename: 'errors.log',
       level: 'error',
-      format: logFormat
+      format: fileFormat
     })
   ]
 });
 
-
-export const logger =
-  process.env.NODE_ENV === 'production'
-    ? prodLogger
-    : devLogger;
+export default process.env.NODE_ENV === 'production'
+  ? prodLogger
+  : devLogger;
